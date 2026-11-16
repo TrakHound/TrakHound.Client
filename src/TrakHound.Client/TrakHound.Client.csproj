@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
+		<!-- The synced files are written for the current C# (the .NET Standard 2.0 default would be C# 7.3) -->
+		<LangVersion>14</LangVersion>
+		<RootNamespace>TrakHound</RootNamespace>
+		<AssemblyName>TrakHound.Client</AssemblyName>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<PackageId>TrakHound.Client</PackageId>
+		<Description>Calls a TrakHound Instance: its Apis, Functions, Workers, Services (Tables, Messages, Message Queues, Key Values, Blobs, Time Series), Volumes, Logs and the Instance itself. Runs on .NET Framework 4.7.2+ and current .NET</Description>
+		<Authors>TrakHound Inc.</Authors>
+		<Copyright>Copyright (c) 2026 TrakHound Inc.</Copyright>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/TrakHound/TrakHound.Client</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/TrakHound/TrakHound.Client</RepositoryUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageTags>trakhound;client;iiot;manufacturing</PackageTags>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+		<Optimize>true</Optimize>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+	<!-- The tests check that the shims behave like the .NET members they replace -->
+	<ItemGroup>
+		<InternalsVisibleTo Include="TrakHound.Client.Tests" />
+	</ItemGroup>
+
+	<!-- .NET Standard 2.0 gets the packages for what's built into .NET 10, and the shims in Polyfills -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<PackageReference Include="System.Text.Json" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.3" />
+		<PackageReference Include="System.Threading.Channels" Version="10.0.3" />
+		<PackageReference Include="PolySharp" Version="1.15.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+		<Compile Remove="Polyfills\**" />
+	</ItemGroup>
+
+</Project>

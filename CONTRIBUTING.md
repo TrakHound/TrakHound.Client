@@ -9,9 +9,9 @@ Everyone taking part is expected to follow the [Code of Conduct](CODE_OF_CONDUCT
 
 ## Where the code comes from
 
-Most of the client (everything under `src/TrakHound.Client/Synced`) is copied from the TrakHound Framework, where the Instance and the modules use the same code. Those files are never edited here: `sync/sync.ps1` replaces them, and the build checks that they match what was synced. A fix to a synced file is made in the Framework and then synced, so open an issue (or a pull request that describes the change) and we'll make it there.
+Most of the client (everything under `src/TrakHound.Client/Synced`) is copied from the TrakHound Framework, where the Instance and the modules use the same code. Those files are never edited here: `sync/sync.ps1` replaces them, and a test checks that they still match what was synced. A fix to a synced file is made in the Framework and then synced, so open an issue (or a pull request that describes the change) and we'll make it there.
 
-The code that is only in this repository is what makes the synced files build for .NET Standard 2.0 (`src/TrakHound.Client/Polyfills`), the tests and the docs. Pull requests for those are welcome here.
+The code that is only in this repository is what makes the synced files build for .NET Standard 2.0 (`src/TrakHound.Client/Polyfills` and `Stubs`), the tests and the docs. Pull requests for those are welcome here.
 
 ## Building and testing
 
@@ -19,8 +19,13 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). T
 
 ```bash
 dotnet build src/TrakHound.Client/TrakHound.Client.csproj
+```
+
+```bash
 dotnet test tests/TrakHound.Client.Tests/TrakHound.Client.Tests.csproj
 ```
+
+The tests in `InstanceContractTests` call a real Instance, to check that the synced models still match what it sends. They run when `TRAKHOUND_CLIENT_TEST_URL` is set (ex. `http://localhost:8472/`), with `TRAKHOUND_CLIENT_TEST_API_KEY` if the Instance needs an API Key. Without it they return without checking anything.
 
 ## Pull requests
 
