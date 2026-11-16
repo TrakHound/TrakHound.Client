@@ -1,0 +1,8 @@
+<Project>
+	<PropertyGroup>
+		<VersionPrefix>1.0.0</VersionPrefix>
+		<!-- Local builds are marked as dev builds. The Builder (TRAKHOUND_BUILDER) sets the version of what it builds -->
+		<VersionSuffix Condition="'$(TRAKHOUND_BUILDER)' == ''">dev</VersionSuffix>
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+	</PropertyGroup>
+</Project>
