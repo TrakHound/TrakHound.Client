@@ -96,10 +96,8 @@ namespace TrakHound.Client.Tests
 
             foreach (var schema in schemas)
             {
-                // A collection's schema (ex. "IEnumerableOfTrakHoundAppInformation") describes its items inline
-                var objectSchema = schema.Value != null && IsArray(schema.Value) ? schema.Value["items"] : schema.Value;
-                if (!(objectSchema?["properties"] is JsonObject properties)) continue;
-                if (!models.TryGetValue(GetItemName(schema.Key), out var model)) continue;
+                if (!(schema.Value?["properties"] is JsonObject properties)) continue;
+                if (!models.TryGetValue(schema.Key, out var model)) continue;
 
                 matched++;
                 var modelProperties = new HashSet<string>(GetJsonPropertyNames(model));
@@ -127,7 +125,6 @@ namespace TrakHound.Client.Tests
             if (url == null) return;
 
             var document = await GetOpenApiDocument(url);
-            var schemas = (document["components"]?["schemas"] as JsonObject) ?? new JsonObject();
             var models = GetModels();
 
             var options = Json.DefaultOptions;
@@ -145,7 +142,7 @@ namespace TrakHound.Client.Tests
                     if (operation == null || path.Key.Contains("{")) continue;
                     if (operation["parameters"] is JsonArray parameters && parameters.Any(o => o?["required"]?.GetValue<bool>() == true)) continue;
 
-                    var type = GetResponseType(operation, schemas, models);
+                    var type = GetResponseType(operation, models);
                     if (type == null) continue;
 
                     using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
@@ -236,32 +233,20 @@ namespace TrakHound.Client.Tests
             return options.GetTypeInfo(type).Properties.Select(o => o.Name);
         }
 
-        // The model a GET returns, from its schema reference. A collection has its own component schema, an array with its items inline
-        // (ex. "IEnumerableOfTrakHoundAppInformation" or "TrakHoundTableArray"), which is read as an array of the item's model
-        private static Type GetResponseType(JsonNode operation, JsonObject schemas, Dictionary<string, Type> models)
+        // The model a GET returns: a schema reference, or an array of them (the Instance describes each model once, as a named component)
+        private static Type GetResponseType(JsonNode operation, Dictionary<string, Type> models)
         {
             var schema = operation["responses"]?["200"]?["content"]?["application/json"]?["schema"];
-            var reference = (schema?["$ref"] as JsonValue)?.GetValue<string>();
+            if (schema == null) return null;
+
+            var isArray = IsArray(schema);
+            var reference = ((isArray ? schema["items"]?["$ref"] : schema["$ref"]) as JsonValue)?.GetValue<string>();
             if (reference == null) return null;
 
             var name = reference.Substring(reference.LastIndexOf('/') + 1);
-            var component = schemas[name];
-            if (component != null && IsArray(component))
-            {
-                return models.TryGetValue(GetItemName(name), out var itemModel) ? itemModel.MakeArrayType() : null;
-            }
+            if (!models.TryGetValue(name, out var model)) return null;
 
-            return models.TryGetValue(name, out var model) ? model : null;
-        }
-
-        private static string GetItemName(string componentName)
-        {
-            const string enumerablePrefix = "IEnumerableOf";
-            const string arraySuffix = "Array";
-
-            if (componentName.StartsWith(enumerablePrefix)) return componentName.Substring(enumerablePrefix.Length);
-            if (componentName.EndsWith(arraySuffix)) return componentName.Substring(0, componentName.Length - arraySuffix.Length);
-            return componentName;
+            return isArray ? model.MakeArrayType() : model;
         }
 
         // "type" is "array", or a list that includes it (ex. ["array", "null"])
